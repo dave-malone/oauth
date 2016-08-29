@@ -1,4 +1,4 @@
-package main
+package oauth
 
 import (
 	"bytes"
@@ -15,25 +15,24 @@ import (
 )
 
 //Client used to communicate with Cloud Foundry
-type OauthClient struct {
-	config     *Config
+type Client struct {
+	config     *ClientConfig
 	Endpoint   *oauth2.Endpoint
 	HttpClient *http.Client
 }
 
 //Config is used to configure the creation of a client
-type Config struct {
+type ClientConfig struct {
 	ApiAddress        string `required:"true"`
 	ClientID          string `required:"true"`
 	ClientSecret      string `required:"true"`
 	GrantType         string
 	SkipSslValidation bool
-	Token             string
 	TokenSource       oauth2.TokenSource
 }
 
-// request is used to help build up a request
-type request struct {
+// Request is used to help build up a request
+type Request struct {
 	method string
 	url    string
 	params url.Values
@@ -43,7 +42,7 @@ type request struct {
 }
 
 // NewClient returns a new client
-func NewOauthClient(config *Config) (client *OauthClient, err error) {
+func NewClient(config *ClientConfig) (client *Client, err error) {
 	ctx := oauth2.NoContext
 	httpClient := http.DefaultClient
 	if config.SkipSslValidation {
@@ -69,7 +68,7 @@ func NewOauthClient(config *Config) (client *OauthClient, err error) {
 
 	config.TokenSource = authConfig.TokenSource(ctx)
 
-	return &OauthClient{
+	return &Client{
 		config:     config,
 		Endpoint:   &endpoint,
 		HttpClient: authConfig.Client(ctx),
@@ -77,8 +76,8 @@ func NewOauthClient(config *Config) (client *OauthClient, err error) {
 }
 
 // NewRequest is used to create a new request
-func (c *OauthClient) NewRequest(method, path string) *request {
-	r := &request{
+func (c *Client) NewRequest(method, path string) *Request {
+	r := &Request{
 		method: method,
 		url:    c.config.ApiAddress + path,
 		params: make(map[string][]string),
@@ -87,7 +86,7 @@ func (c *OauthClient) NewRequest(method, path string) *request {
 }
 
 // DoRequest runs a request with our client
-func (c *OauthClient) DoRequest(r *request) (*http.Response, error) {
+func (c *Client) DoRequest(r *Request) (*http.Response, error) {
 	req, err := r.toHTTP()
 	if err != nil {
 		return nil, err
@@ -96,8 +95,8 @@ func (c *OauthClient) DoRequest(r *request) (*http.Response, error) {
 	return resp, err
 }
 
-// toHTTP converts the request to an HTTP request
-func (r *request) toHTTP() (*http.Request, error) {
+// toHTTP converts the Request to an HTTP request
+func (r *Request) toHTTP() (*http.Request, error) {
 	// Check if we should encode the body
 	if r.body == nil && r.obj != nil {
 		b, err := encodeBody(r.obj)
@@ -136,7 +135,7 @@ func encodeBody(obj interface{}) (io.Reader, error) {
 	return buf, nil
 }
 
-func (c *OauthClient) GetToken() (string, error) {
+func (c *Client) GetToken() (string, error) {
 	token, err := c.config.TokenSource.Token()
 	if err != nil {
 		return "", fmt.Errorf("Error getting bearer token: %v", err)

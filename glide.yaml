@@ -1,4 +1,4 @@
-package: github.com/dave-malone/oauthclient
+package: github.com/dave-malone/oauth
 import:
 - package: github.com/kelseyhightower/envconfig
 - package: golang.org/x/net
