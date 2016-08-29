@@ -16,9 +16,10 @@ import (
 
 //Client used to communicate with Cloud Foundry
 type Client struct {
-	config     *ClientConfig
-	Endpoint   *oauth2.Endpoint
-	HttpClient *http.Client
+	config      *ClientConfig
+	Endpoint    *oauth2.Endpoint
+	HttpClient  *http.Client
+	TokenSource oauth2.TokenSource
 }
 
 //Config is used to configure the creation of a client
@@ -28,7 +29,6 @@ type ClientConfig struct {
 	ClientSecret      string `required:"true"`
 	GrantType         string
 	SkipSslValidation bool
-	TokenSource       oauth2.TokenSource
 }
 
 // Request is used to help build up a request
@@ -81,13 +81,11 @@ func NewClient(config *ClientConfig) (client *Client, err error) {
 		Scopes:       []string{""},
 		TokenURL:     endpoint.TokenURL,
 	}
-
-	config.TokenSource = authConfig.TokenSource(ctx)
-
 	return &Client{
-		config:     config,
-		Endpoint:   &endpoint,
-		HttpClient: authConfig.Client(ctx),
+		config:      config,
+		Endpoint:    &endpoint,
+		HttpClient:  authConfig.Client(ctx),
+		TokenSource: authConfig.TokenSource(ctx),
 	}, nil
 }
 
@@ -152,7 +150,7 @@ func encodeBody(obj interface{}) (io.Reader, error) {
 }
 
 func (c *Client) GetToken() (string, error) {
-	token, err := c.config.TokenSource.Token()
+	token, err := c.TokenSource.Token()
 	if err != nil {
 		return "", fmt.Errorf("Error getting bearer token: %v", err)
 	}
