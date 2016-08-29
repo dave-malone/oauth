@@ -36,9 +36,17 @@ type Request struct {
 	method string
 	url    string
 	params url.Values
-	header *http.Header
+	header http.Header
 	body   io.Reader
 	obj    interface{}
+}
+
+func (r *Request) AddHeader(key, value string) {
+	r.header.Add(key, value)
+}
+
+func (r *Request) AddParam(key, value string) {
+	r.params.Add(key, value)
 }
 
 // NewClient returns a new client
@@ -81,6 +89,7 @@ func (c *Client) NewRequest(method, path string) *Request {
 		method: method,
 		url:    c.config.ApiAddress + path,
 		params: make(map[string][]string),
+		header: make(map[string][]string),
 	}
 	return r
 }
@@ -107,13 +116,12 @@ func (r *Request) toHTTP() (*http.Request, error) {
 	}
 
 	// Create the HTTP request
-
 	req, err := http.NewRequest(r.method, r.url, r.body)
 	if err != nil {
 		return req, err
 	}
 
-	req.Header = *r.header
+	req.Header = r.header
 
 	return req, err
 }
