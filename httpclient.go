@@ -49,6 +49,14 @@ func (r *Request) AddParam(key, value string) {
 	r.params.Add(key, value)
 }
 
+func (r *Request) SetBody(body io.Reader) {
+	r.body = body
+}
+
+func (r *Request) SetPayload(obj interface{}) {
+	r.obj = obj
+}
+
 // NewClient returns a new client
 func NewClient(config *ClientConfig) (client *Client, err error) {
 	ctx := oauth2.NoContext
